@@ -1,3 +1,4 @@
+# Lesson 5 Exercise 1
 import os
 
 
@@ -19,6 +20,7 @@ def remove_dir():
             print(f'Директория {path} уже удалена')
 
 
-create_dir()
-input('Enter для удаления директорий')
-remove_dir()
+if __name__ == '__main__':
+    create_dir()
+    input('Enter для удаления директорий')
+    remove_dir()

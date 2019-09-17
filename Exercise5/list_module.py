@@ -1,3 +1,4 @@
+# Lesson 5 Exercise 2
 import random
 
 
@@ -18,6 +19,7 @@ def fill_list():
             my_list.append(elem)
 
 
-main_list = fill_list()
-print(f'Мой список элементов: {main_list}')
-print(f'Мой рандомный элемент из списка - {get_random_elem(main_list)}')
+if __name__ == '__main__':
+    main_list = fill_list()
+    print(f'Мой список элементов: {main_list}')
+    print(f'Мой рандомный элемент из списка - {get_random_elem(main_list)}')
