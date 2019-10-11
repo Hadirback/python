@@ -8,12 +8,6 @@ def get_work_directory():
     print(os.getcwd())
 
 
-# метод для изменения рабочей директории
-def change_work_directory(path):
-    if os.path.exists(path):
-        os.chdir(path)
-
-
 # метод выдает итоговый путь до папки или файла
 def get_path(path, name):
     if os.path.isabs(path):
@@ -28,19 +22,23 @@ def get_list(path=None, folders_only=False):
         result = None
         if not path:
             result = os.listdir()
+            path = ''
+        elif os.path.exists(path):
+            result = os.listdir(path)
         else:
-            if os.path.exists(path):
-                result = os.listdir(path)
-            else:
-                print('Такого пути не существует!')
+            save_info('Такого пути не существует!')
+            return
+
         if result:
             if folders_only:
-                result = [f for f in result if os.path.isdir(f)]
+                result = [f for f in result if os.path.isdir(os.path.join(path, f))]
+
             print(result)
         else:
             raise Exception('Что то не так! result == None. Метод get_list')
+
     except Exception as ex:
-        print(f'Ошибка в методе get_list. Message: {ex}')
+        save_info(f'Ошибка в методе get_list. Message: {ex}')
 
 
 # метод для создания файла
@@ -49,22 +47,25 @@ def create_file(name, path=None, text=None):
         result = None
         if not path:
             result = name
+        elif os.path.exists(path):
+            result = get_path(path, name)
+            if os.path.exists(result):
+                save_info('Фаил будет переписан!')
         else:
-            if os.path.exists(path):
-                result = get_path(path, name)
-            else:
-                print('Не удалось создать фаил! Такого пути не существует!')
-                return
+            save_info('Не удалось создать фаил! Такого пути не существует!')
+            return
 
         if result:
             # создание и запись в фаил
             with open(result, 'w', encoding='utf-8') as f:
                 if text:
                     f.write(text)
+                    save_info('Фаил успешно создан')
         else:
             raise Exception('Что то не так! result == None. Метод create_file')
+
     except Exception as ex:
-        print(f'Неизвестная ошибка в методе create_file. Message: {ex}')
+        save_info(f'Ошибка в методе create_file. Message: {ex}')
 
 
 # метод для создания папки
@@ -79,38 +80,88 @@ def create_folder(name, path=None):
             # Является ли путь абсолютным, если нет то использоуем относительный путь
             result = get_path(path, name)
         else:
-            print('Не удалось создать папку! Такого пути не существует!')
+            save_info('Не удалось создать папку! Такого пути не существует!')
             return
 
         if result:
-            os.mkdir(name)
-            print('Папка успешно создана!')
+            os.mkdir(result)
+            save_info('Папка успешно создана!')
         else:
             raise Exception('Что то не так! result == None. Метод create_file')
+
     except FileExistsError:
-        print('Такая папка уже есть')
+        save_info('Такая папка уже есть')
     except Exception as ex:
-        print(f'Неизвестная ошибка в методе create_folder. Message: {ex}')
+        save_info(f'Ошибка в методе create_folder. Message: {ex}')
 
 
 # метод для удаления файла
-def delete_file(name):
-    if os.path.isdir(name):
-        os.rmdir(name)
-    else:
-        os.remove(name)
+def delete_file_or_folder(name, path=None):
+    try:
+        result = None
+        if not path:
+            result = name
+        elif os.path.exists(path):
+            result = get_path(path, name)
+        else:
+            save_info('Не удалось удалить фаил/папку! Такого пути не существует!')
+            return
+
+        if result:
+            if os.path.isdir(result):
+                if not os.listdir(result):
+                    shutil.rmtree(result)
+                    save_info('Папка успешно удалена')
+                else:
+                    raise Exception('Папка не пуста!')
+            else:
+                os.remove(result)
+                save_info('Фаил успешно удален')
+        else:
+            raise Exception('Что то не так! result == None. Метод create_file')
+
+    except IOError as ex:
+        save_info('Такого файла/папки нет!')
+    except Exception as ex:
+        save_info(f'Ошибка в методе delete_file_or_folder. Message: {ex}')
 
 
-def copy_file(name, new_name):
-    if os.path.isdir(name):
-        try:
-            shutil.copytree(name, new_name)
-        except FileExistsError:
-            print('ТАкая папка уже есть')
-    else:
-        shutil.copy(name, new_name)
+# Метод для копирования файла
+def copy_file_or_folder(name, new_name, path=None):
+    try:
+        if not os.path.exists(name):
+            save_info('Неверный путь оригинального файла!')
+            return
+
+        if name == new_name and path:
+            save_info('Одинаковые названия в одной папке!')
+            return
+
+        result = None
+        if not path:
+            result = new_name
+        elif os.path.exists(path):
+            result = get_path(path, new_name)
+        else:
+            save_info('Не удалось скопировать фаил/папку! Такого пути не существует!')
+            return
+
+        if result:
+            if os.path.isdir(name):
+                shutil.copytree(name, result)
+                save_info('Папка успешно скопирована')
+            else:
+                shutil.copy(name, result)
+                save_info('Фаил успешно скопирован')
+        else:
+            raise Exception('Что то не так! result == None. Метод copy_file_or_folder')
+    except FileExistsError:
+        save_info('Такая папка уже есть')
+    except Exception as ex:
+        save_info(f'Ошибка в методе copy_file_or_folder. Message: {ex}')
 
 
+# Метод для введения лога
 def save_info(message):
     current_time = datetime.datetime.now()
     result = f'{current_time} - {message}'
@@ -119,6 +170,5 @@ def save_info(message):
         f.write(result + '\n')
 
 
-print(os.path.isabs(u'/dfdfs'))
-print()
-print(os.getcwd())
+if __name__ == '__main__':
+    get_work_directory()
